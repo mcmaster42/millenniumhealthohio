@@ -9,6 +9,9 @@ from datetime import datetime
 import calendar
 import os
 
+
+
+
 # Set page configuration
 st.set_page_config(
     page_title="Fentanyl Testing Data Analysis",
@@ -23,19 +26,26 @@ This dashboard analyzes urine test results where patients tested positive for fe
 Data provided by Millennium Health from Ohio healthcare providers.
 """)
 
-# Function to load and preprocess data
 @st.cache_data
 def load_data():
-    # First try to load from the uploaded file
-    uploaded_file = st.file_uploader("Upload the fentanyl test data (TSV format)", type=['txt', 'tsv'])
+    # Try to load from uploaded file
+    uploaded_file = st.file_uploader("Upload a fentanyl test data file (CSV or TSV)", type=['csv', 'tsv'])
     if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file, sep='\t')
-    # If no upload, check if the file exists locally
-    elif os.path.exists('paste.txt'):
-        df = pd.read_csv('paste.txt', sep='\t')
+        if uploaded_file.name.endswith('.tsv'):
+            return pd.read_csv(uploaded_file, sep='\t')
+        else:
+            return pd.read_csv(uploaded_file)
     else:
-        st.warning("Please upload the data file to continue.")
-        return None
+        # Fallback to default CSV bundled in repo
+        try:
+            return pd.read_csv("millennium_urine_tests_ohio_fentanyl_postivie.csv")
+        except FileNotFoundError:
+            st.warning("No uploaded file or default data file found.")
+            return None
+
+df = load_data()
+if df is None:
+    st.stop()
     
     # Convert DATE_TESTED to datetime
     df['DATE_TESTED'] = pd.to_datetime(df['DATE_TESTED'])
